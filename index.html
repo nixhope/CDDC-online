@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Timetable Course Delivery</title>
+  <link href="resources/monolith.css" rel="stylesheet" type="text/css"/>
+</head>
+
+<body>
+  <h3 class="title">Course Delivery Data Collection for the World Wide Web</h3>
+  <p>Click on any of the headings (<b>Subject</b>, <b>Department</b>, etc) to filter by that field</p>
+  <table class="course" data-bind="attr: {width: MAIN_WIDTH+'px'}">
+    <thead>
+      <tr data-bind="foreach: $root.courseHeaders">
+        <th class="course header" data-bind="
+          css: {'active-filter': $data === $root.currentFilter()},
+          click: function(t, e) {
+            if ($data === $root.currentFilter()) { // Hide filter row
+              $root.currentFilter(null);
+            } else {
+              $root.showFilters(e);
+            }
+          },
+          attr: {id: $data}
+        ">
+          <a class="course header" href="show filters" data-bind="  text: $root.formatHeader($data)"></a>
+          <img data-bind="visible: $root.filters[$data]() != null" src="resources/filter.png"/>
+        </th>
+      </tr>
+    </thead>
+    <tbody data-bind="visible: $root.currentFilter() !== null">
+      <tr>
+        <td class="active-filter" data-bind="attr: {colspan: $root.courseHeaders.length}">
+          Filter for <b data-bind="
+            text: $root.formatHeader($root.currentFilter())
+          "></b>
+          <!--ko if:$root.currentFilter() === 'size' -->
+            <span>
+              min: <input class="size-selector" type="number" min="1" max="9999" data-bind="
+                value: $root.filters['sizeMin'],
+                event: {keydown: $root.isInteger}"
+              />
+              max: <input class="size-selector" type="number" min="1" max="9999" data-bind="
+                value: $root.filters['sizeMax'],
+                event: {keydown: $root.isInteger}"
+              />
+              <a class="button" id="size-filter-button" href="javascript: filter" data-bind="click: $root.filterBySize">Filter</a>
+            </span>
+          <!-- /ko -->
+          <!--ko if:$root.currentFilter() === 'title' -->
+            <span>
+              contains:
+              <input data-bind="value: $root.filters[$root.currentFilter()]"/>
+            </span>
+          <!-- /ko -->
+          <!--ko if:$root.currentFilter() === 'last-edited' -->
+            <span>
+              is not currently available
+            </span>
+          <!-- /ko -->
+          <!--ko if:$root.currentFilter() !== 'size' &&
+            $root.currentFilter() !== 'title' &&
+            $root.currentFilter() !== 'last-edited'
+          -->
+            <span>
+              select from the dropdown menu:
+              <select data-bind="
+                options: $root.filterOptions[$root.currentFilter()],
+                optionsText: function(option) {
+                  return option !== null ? option : 'None selected';
+                },
+                value: $root.filters[$root.currentFilter()] 
+              "></select>           
+            </span>
+          <!-- /ko -->
+          <a href="#" class="button" data-bind="visible: $root.filters[$root.currentFilter()] !== null,
+            click: clearFilter">Clear Filter</a>
+          <a href="#" class="button" data-bind="visible: $root.filters[$root.currentFilter()] !== null,
+            click: function(){$root.currentFilter(null);}">Hide Filter Row</a>
+        </td>
+      </tr>
+    </tbody>
+    <tbody data-bind="visible: $root.status() === 'loading'">
+      <tr class="module-evenRow">
+        <td colspan="100%">
+          <h4>Loading course data...</h4>
+        </td>
+      </tr>
+    </tbody>
+    <tbody data-bind="visible: $root.status() === 'ready' && courses().length == 0">
+      <tr class="module-evenRow">
+        <td colspan="100%">
+          <h4>No courses to display, please try different filters.</h4>
+        </td>
+      </tr>
+    </tbody>
+    <tbody data-bind="visible: $root.status() === 'error'">
+      <tr class="module-evenRow">
+        <td colspan="100%">
+          <h4>An error of some sort occurred on the server.</h4>
+          <h4>Your session may have timed out and you may need to refresh the page</h4>
+          <h4>If problems persist, please contact <a href="mailto:timetable@auckland.ac.nz?Subject=Course%20data%20gathering">timetable@auckland.ac.nz</a></h4>
+        </td>
+      </tr>
+    </tbody>
+    <tbody data-bind="template: {name: 'course-stempel', foreach: courses, as: 'course'}, 
+      visible: courses().length > 0">
+    </tbody>
+  </table>
+
+  <!--'Stempel' is German for stamp/template, using this because Template is a data type-->
+  <script type="text/html" id="course-stempel">
+    <tr data-bind="css: {'module-evenRow': $index()%2 == 0,
+      'module-oddRow': $index()%2 == 1,
+      'new': _new}">
+      <td>
+        <span data-bind="text: subject, visible: !expanded()"></span>
+        <select data-bind="options: SUBJECTS, value: subject, visible: expanded"/>
+      </td>
+      <td>
+        <span data-bind="text: courseNumber, visible: !expanded()"></span>
+        <input type="text" size="4" data-bind="value: courseNumber, visible: expanded"/>
+      </td>
+      <td>
+        <span data-bind="text: title"></span>
+      </td>
+      <td>
+        <span data-bind="text: term, visible: !expanded()"></span>
+        <select data-bind="options: TERMS, optionsText: termLookUp, value: term, visible: expanded"/>
+      </td>
+      <td>
+        <span data-bind="text: campus, visible: !expanded()"></span>
+        <select data-bind="options: CAMPUSES, optionsText: campusLookUp, value: campus, visible: expanded"/>
+      </td>
+      <td>
+        <span data-bind="text: size, visible: !expanded()"></span>
+        <input type="text" size="5" data-bind="value: size, visible: expanded"/>
+      </td>
+      <td>
+        <span data-bind="text: faculty"></span>
+      </td>
+      <td>
+        <span data-bind="text: department"></span>
+      </td>
+      <td>
+        <b><span data-bind="text: status"></span></b>
+      </td>
+      <td data-bind="text: lastEdited()">
+      </td>
+      <td>        
+        <a href="#" class="button row-button edit-row" data-bind="click: function(){expand();}, visible: !expanded()">Edit</a>
+        <a href="#" class="button row-button collapse-row" data-bind="click: function(){expand();}, visible: expanded">Collapse</a>
+      </td>
+      <td>
+        <a href="#" class="button row-button" data-bind="click: function(){
+          $root.copyObject(course, null, null);
+        }">Copy</a>
+      </td>
+      <td>
+        <a href="#" class="button change row-button" data-bind="click: saveChanges, visible: _changed()">Save</a>
+        <a href="#" class="button change row-button" data-bind="click: discardChanges, visible: _changed() &&!_new()">Discard</a>
+        <a href="#" class="button change row-button" data-bind="click: function() {
+          $root.deleteObject(course, null);
+        }, visible: _changed() && _new()">Discard</a> <!--// Discarding a new course means a delete -->
+      </td>
+      <!--// Expanded course -->
+      <tr data-bind="css: {'module-evenRow': $index()%2 == 0, 'module-oddRow': $index()%2 == 1}, if: expanded">
+        <td colspan="100%">
+          <div class="sublevel">
+            <table class="noborder" width="100%">
+              <tr class="noborder">
+                <td class="noborder" width="26%">
+                  Sequencing presets:
+                  <br/>
+                  <span data-bind="html: displayArray(course.sequencingSelection)"></span>
+                  <br/>
+                  <a href="#" class="button" data-bind="
+                    click: function(){$root.sequencingOverlay.show(course.sequencingSelection,
+                      course.name, course, course, course)}
+                  ">Edit</a>
+                </td>
+                <td class="noborder" width="26%">
+                  Additional sequencing details:
+                  <br/>
+                  <span data-bind="html: addLineBreaks(course.sequencingFreeText())"></span>
+                  <br/>
+                  <a href="#" class="button" data-bind="
+                    click: function(){$root.sequencingOverlay.show(course.sequencingSelection,
+                      course.name, course, course, course)}
+                  ">Edit</a>
+                </td>
+                <td class="noborder" width="26%">
+                  General course notes:
+                  <br/>
+                  <textarea data-bind="value: course.moduleFreeText" rows="3" cols="35">
+                  </textarea>
+                </td>
+                <td class="noborder" width="12%">
+                  <p>
+                    <a href="#" class="button" data-bind="
+                      click: function(){$root.changeStatus(course, 'Dep progress')}
+                      ">
+                      Review in progress
+                    </a>
+                  </p>
+                  <p>
+                    <a href="#" class="button" data-bind="
+                      click: function(){$root.changeStatus(course, 'Dep reviewed')}
+                    ">
+                      Department reviewed
+                    </a>
+                  </p>
+                </td>
+                <td class="noborder" width="12%">
+                  <p>
+                    <a href="#" class="button" data-bind="
+                      click: function(){$root.changeStatus(course, 'Fac reviewed')}
+                    ">
+                      FTC reviewed
+                    </a>
+                  </p>
+                  <p>
+                    <a href="#" class="button" data-bind="
+                      click: function(){$root.changeStatus(course, 'Deleted')}
+                    ">
+                      To be deleted
+                    </a>
+                  </p>
+                </td>
+              </tr>
+            </table>
+            <hr/>
+          </div>
+
+          <table class="sublevel" data-bind="attr: {width: (MAIN_WIDTH-INDENT*2*1)+'px'}">
+            <thead>
+              <th>Component</th>
+              <th>Campus</th>
+              <th>Size</th>
+              <th>Expected Stream Count</th>
+              <td>
+                <a href="#" class="button" data-bind="click: function() {
+                  $root.addObject('component', course, course);
+                }">Add Component</a>
+              </td>
+            </thead>
+            <!--// Row for each component -->
+            <tbody data-bind="template: {name: 'component-stempel', foreach: course.components(), as: 'component'}, 
+              visible: course.components().length > 0">
+            </tbody>            
+          </table>
+        </td>
+      </tr>
+    </tr>
+  </script>
+
+  <script type="text/html" id="component-stempel">
+    <tr data-bind="css: {
+        'component-evenRow': $index()%2 == 0,
+        'component-oddRow': $index()%2 == 1,
+        'new': _new
+      }">
+      <td width="6%">
+        <span data-bind="text: component.name, visible: !expanded()"></span>
+        <select data-bind="options: COMPONENT_TYPES, 
+        optionsText: componentLookUp, 
+        value: component.name, visible: expanded"/>
+      </td>
+      <td width="5%">
+        <span data-bind="text: component.campus, visible: !expanded()"></span>
+        <select data-bind="options: CAMPUSES, optionsText: campusLookUp, value: component.campus, visible: expanded"/>
+      </td>
+      <td width="10%">
+        <span data-bind="text: component.size, visible: !expanded()"></span>
+        <input type="text" size="5" data-bind="value: component.size, visible: expanded"/>
+      </td>
+      <td width="10%">
+        <span data-bind="text: Math.ceil(course.size()/component.size())"></span>
+      <td width="5%">
+        <a href="#" class="button row-button edit-row" data-bind="click: expand, visible: !expanded()">Edit</a>
+        <a href="#" class="button row-button collapse-row" data-bind="click: expand, visible: expanded()">Collapse</a>
+      </td>
+      <!--
+      <td width="5%">
+      </td>-->
+      <td width="10%">
+        <a href="#" class="button row-button" data-bind="click: function(){
+          $root.copyObject(component, course, course);
+        }">Copy</a>
+        <a href="#" class="button row-button" data-bind="click: function(){
+          $root.deleteObject(component, course);
+        }">Delete</a>
+      </td>
+
+      <!--// Row for each template -->
+      <tr data-bind="css: {'component-evenRow': $index()%2 == 0, 'component-oddRow': $index()%2 == 1}, if: component.expanded">
+        <td colspan="100%">
+          <table class="sublevel" data-bind="attr: {width: (MAIN_WIDTH-INDENT*2*2)+'px'}">
+            <thead>
+              <th>Template Name</th>
+              <th>Duration</th>
+              <th>Required staff names</th>
+              <th>Location suitabilities</th>
+              <th>Required number of locations</th>
+              <th>Location details</th>
+              <td>
+                <a href="#" class="button" data-bind="click: function() {
+                  $root.addObject('template', component, course);
+                }">Add Template</a>
+              </td>
+            </thead>
+            <tbody data-bind="template: {name: 'template-stempel', foreach: component.templates(), as: 'template'}, 
+              visible: component.templates().length > 0">
+            </tbody>            
+          </table>
+        </td>
+      </tr>
+
+    </tr>
+  </script>
+
+  <script type="text/html" id="template-stempel">
+    <tr data-bind="css: {
+        'template-evenRow': $index()%2 == 0,
+        'template-oddRow': $index()%2 == 1,
+        'new': _new
+      }">
+      <td data-bind="text: template.name()"></td>
+      <td width="10%">
+        <span data-bind="text: durationLookUp(template.duration()), visible: !expanded()"></span>
+        <select data-bind="options: DURATIONS, 
+        optionsText: durationLookUp, 
+        value: template.duration, visible: expanded"/>
+      </td>
+      <td width="10%">
+        <span data-bind="html: displayArray(template.staffPresets())"></span><br/>
+        <a href="#" class="button" data-bind="click: function(){
+            $root.staffOverlay.show(template.staffPresets, template.name, course);
+          }, visible: expanded()">Edit</a>
+      </td>
+      <td width="10%">
+        <span data-bind="html: displayArray(template.locationSuitabilities())"></span>
+        <span data-bind="visible: expanded()">
+          <br/>
+          <a href="#" class="button" data-bind="click: function(){
+            $root.locationOverlay.show(
+              template.locationSuitabilities, template.name, course, component, template);}
+          ">Edit</a>
+        </span>
+      </td>
+      <td width="10%">
+        <span data-bind="text: template.locationRequirementNumber()"></span>
+        <span data-bind="visible: expanded()">
+          <br/>
+          <a href="#" class="button" data-bind="click: function(){
+            $root.locationOverlay.show(
+              template.locationSuitabilities, template.name, course, component, template);}
+          ">Edit</a>
+        </span>
+      </td>
+      <td data-bind="html: addLineBreaks(template.locationFreeText())">                
+      </td>
+      <td width="5%">
+        <a href="#" class="button row-button edit-row" data-bind="click: expand, visible: !expanded()">Edit</a>
+        <a href="#" class="button row-button collapse-row" data-bind="click: expand, visible: expanded()">Collapse</a>
+      </td>
+      <!--<td width="5%">
+      </td>-->
+      <td width="10%">
+        <a href="#" class="button row-button" data-bind="click: function(){
+          $root.copyObject(template, component, course);
+        }">Copy</a>
+        <a href="#" class="button row-button" data-bind="click: function(){
+          $root.deleteObject(template, component);
+        }">Delete</a>
+      </td>
+
+      <!--// Row for each activity -->
+      <tr data-bind="css: {'template-evenRow': $index()%2 == 0, 'template-oddRow': $index()%2 == 1}, if: template.expanded">
+        <td colspan="100%" data-bind="visible: template.activities().length > 0">
+          <table class="sublevel" data-bind="attr: {width: (MAIN_WIDTH-INDENT*2*3)+'px'}">
+            <tbody data-bind="template: {name: 'activity-stempel', foreach: template.activities(), as: 'activity'}">
+            </tbody>            
+          </table>
+        </td>
+        <td colspan="100%" data-bind="visible: template.activities().length == 0">
+          <table class="sublevel" data-bind="attr: {width: (MAIN_WIDTH-INDENT*2*3)+'px'}">
+            <tr data-bind="css: 'activity-evenRow'">
+              <td width="95%">
+                <div class="activity-pane">
+                  <a href="#" class="button" data-bind="click: function() {
+                    $root.addObject('activity', template, course);
+                  }">Add new Activity</a> for this template (which currently has no Activities).
+                </div>
+              </td>
+            </tr>
+          </table>          
+        </td>
+      </tr>
+
+    </tr>
+  </script>
+
+  <script type="text/html" id="activity-stempel">
+    <tr data-bind="css: {
+        'activity-evenRow': $index()%2 == 0,
+        'activity-oddRow': $index()%2 == 1,
+        'new': _new
+      }">
+      <td width="95%">
+        <div class="activity-pane">
+          <table class="activity-layout"><!--// Oh no cardinal sin of using tables for layout! //-->
+            <tr>
+              <td>
+                <b>Activity Name</b>:
+              </td>
+              <td data-bind="text: activity.name()">
+              </td>
+              <td> </td>
+              <td>
+                <b>Weeks</b>:
+              </td>
+              <td data-bind="text: weeksToText(stringToWeeksArray(activity.weeks()))">
+              </td>
+              <td>
+                <a href="#" class="button" data-bind="click: function(){
+                  $root.weeksOverlay.show(activity.weeks, activity.name, course);
+                }">Edit</a>
+              </td>
+            </tr>
+
+            <tr>
+              <td>
+                <b>Preset staff</b>:
+              </td>
+              <td data-bind="html: displayArray(activity.staffPresets())">
+              </td>
+              <td>
+                <a href="#" class="button" data-bind="click: function(){
+                    $root.staffOverlay.show(
+                      activity.staffPresets, activity.name, course);
+                  }">Edit</a>
+              </td>
+
+              <td>
+                <!--Jointly-taught with:-->
+              </td>
+              <td data-bind="html: displayArray(activity.jointlyTaughtWith())">
+              </td>
+              <td><!--Uneditable--></td>
+            </tr>
+
+            <tr>
+              <td>
+                <b>Location suitabilities</b>:
+              </td>
+              <td data-bind="html: displayArray(activity.locationSuitabilities())">
+              </td>
+              <td>
+                <a href="#" class="button" data-bind="click: function(){
+                  $root.locationOverlay.show(
+                    activity.locationSuitabilities, activity.name, course, template, activity);}
+                ">Edit</a>
+              </td>
+
+              <td>
+                <b>Location details</b>:
+              </td>
+              <td data-bind="html: addLineBreaks(activity.locationFreeText())">                
+              </td>
+            </tr>
+
+            <tr>
+              <td>
+                <b>Number of required locations</b>:
+              </td>
+              <td>
+                <span data-bind="text: activity.locationRequirementNumber"></span>
+              </td>
+              <td>
+                <a href="#" class="button" data-bind="click: function(){
+                  $root.locationOverlay.show(
+                    activity.locationSuitabilities, activity.name, course, template, activity);}
+                ">Edit</a>
+              </td>
+              <td>
+                <b>Starts:</b>
+              </td>
+              <td>
+                <select data-bind="options: STARTS, value: activity.startPreferenceName">
+                </select>
+              </td>
+            </tr>
+
+            <tr>
+              <td colspan="6">
+                <div><b>Staff Variants</b>:</div>
+                <table class="activity-layout">
+                  <!--/* Yes, this is a lot of nested tables */ -->
+                  <td><b>Staff Name</b></td>
+                  <td><b>Teaching Weeks</b></td>
+                  <tbody data-bind="template: {
+                      name: 'variantstaff-stempel', 
+                      foreach: staffVariants, 
+                      as: 'staffVariant'}">
+                  </tbody>
+                </table>
+                <div data-bind="if: staffVariants().length == 0">
+                  Add staff variants here.<br/>
+                  Variants are used to indicate the specific weeks a given staff member is teaching,</br>
+                  if they are not allocated to all of the weeks of the activity.
+                </div>
+                <a href="#" class="button" data-bind="click: function(){
+                  $root.addObject('staffVariant', activity, course);
+                }">
+                  Add new staff variant
+                </a>
+                <a href="#" class="button" data-bind="click: function(){
+                  sortVariantListByWeeks(staffVariants);
+                }">
+                  Sort by weeks
+                </a>
+                <a href="#" class="button" data-bind="click: function(){
+                  sortVariantListByNames(staffVariants);
+                }">
+                  Sort by names
+                </a>
+                <div class="warning" data-bind="visible:
+                    activity.weeks() !== addVariantWeeks(activity.staffVariants()),
+                    if: activity.staffVariants().length > 0
+                ">
+                  <br/>
+                  Warning: staff variant weeks do not match the activity's weeks.
+                  <span data-bind="if: function(){
+                    for (var i = 0; i < staffVariants().length; i++) {
+                      if (!weeksContainedBy(staffVariants()[i].weeks(), activity.weeks())) {
+                        return true;
+                      }
+                    }
+                    return false;
+                  }()">
+                    <br/>One or more variants has week(s) lying outside the activity's weeks.
+                  </span>
+                  <span data-bind="if: !weeksContainedBy(
+                    activity.weeks(), addVariantWeeks(activity.staffVariants()))
+                  ">
+                    <br/>The activity has week(s) not covered by any variants.
+                  </span>
+                </div>
+              </td>
+            </tr>
+
+          </table>
+          Additional notes for this activity:<br/>
+          <textarea data-bind="value: activity.activityFreeText" rows="3" cols="50"></textarea>
+        </div>
+      </td>
+      <td width="5%">
+        <a href="#" class="button" data-bind="click: function(){
+          $root.copyObject(activity, template, course);
+        }">Copy</a>
+        <a href="#" class="button" data-bind="click: function(){
+          $root.deleteObject(activity, template);
+        }">Delete</a>
+      </td>
+    </tr>
+  </script>
+
+  <script type="text/html" id="variantstaff-stempel">
+    <tr data-bind="css: {'new': _new}">
+        <td data-bind="text: staffPreset"></td>
+        <td data-bind="text: weeksToText(stringToWeeksArray(weeks()))"></td>
+        <td>
+          <a href="#" class="button" data-bind="click: function(){
+              $root.staffVariantOverlay.show(staffPreset,
+                activity.name()+' <'+weeksToText(stringToWeeksArray(weeks()))+'>',
+                course);
+            }">
+              Edit staff name
+          </a>
+        </td>
+        <td>
+          <a href="#" class="button" data-bind="click: function(){
+            $root.weeksOverlay.show(weeks, 
+              activity.name()+' <'+weeksToText(stringToWeeksArray(weeks()))+'>',
+              course,
+              activity);
+          }">Edit weeks</a>
+        </td>
+        <td>
+          <a href="#" class="button" data-bind="click: function(){
+            $root.deleteObject(staffVariant, activity);
+          }">
+            Delete
+          </a>
+        </td>
+    </tr>
+  </script>
+
+  <div class="overlay" id="response-overlay" data-bind="visible: responseOverlay.visible()">
+    <div data-bind="visible: responseOverlay.status() == 'sending'">
+      Sending changes to server. Please wait. If nothing happens, your session may have timed out and you will need to refresh the page.
+    </div>
+
+    <div data-bind="visible: responseOverlay.status() == 'success'">
+      <div>Your changes were successfully sent to the server. See below for a log of changes made:</div>
+      <br/>
+      <textarea data-bind="value: responseOverlay.text" rows="5" cols="100" readonly></textarea>
+
+      <div data-bind="visible: responseOverlay.errorText().length > 0">
+        <hr/>
+        <div class="warning">Some of the changes you made could not be applied at the server end.<br/>
+        Please see below for details. You may need to refresh the form to resolve these.</div>
+        <br/>
+        <textarea data-bind="value: responseOverlay.errorText" rows="5" cols="100" readonly></textarea>
+      </div>
+
+    </div>
+
+    <div data-bind="if: responseOverlay.status() == 'error'" class="warning">
+      <div>There was an error while sending your changes to the server (or dealing with the server's response).<br/>
+      Error details are below, please copy these and email them to timetable@auckland.ac.nz<!--, or
+      <a data-bind="attr: {
+        'href': 'mailto:timetable@auckland.ac.nz?Subject=Course%20data%20gathering%20error'+
+          '&body='+encodeURIComponent(responseOverlay.errorText())
+      }" href="mailto:timetable@auckland.ac.nz?Subject=Course%20data%20gathering%20error">
+        click here to open an email template
+      </a>-->.</div>
+      <br/>
+      <textarea data-bind="value: responseOverlay.errorText" rows="15" cols="100" readonly></textarea>
+    </div>
+
+    <div>
+      <a href="#" class="button" data-bind="click: function(){responseOverlay.cancel();}">
+        Close
+      </a>
+    </div>
+  </div>
+
+  <div class="overlay" id="weeks-overlay" data-bind="visible: weeksOverlay.visible()">
+    <div>
+      <b>Editing weeks for: <span data-bind="text: weeksOverlay.localName()"></span></b>
+    </div>
+    <br/>
+    <div class="weeks-pane">
+      <table>
+        <tr data-bind="foreach: ALLWEEKS.slice(0, ALLWEEKS.length/2)">
+          <td unselectable="on" class="week" data-bind="text: $data,
+            attr: {
+              'id': 'week'+$data,
+              title: DATES[$data-1]
+            }">
+          </td>
+        </tr>
+        <tr data-bind="foreach: ALLWEEKS.slice(ALLWEEKS.length/2)">
+          <td unselectable="on" class="week" data-bind="text: $data,
+            attr: {
+              'id': 'week'+$data,
+              title: DATES[$data-1]
+            }">
+          </td>
+        </tr>
+      </table>
+    </div>
+    <br/>
+    <div>
+      Select/deselect weeks by clicking (click and drag to select multiple).
+      <br/>
+      Hover your mouse over a block to see the starting date for that week.
+      <br/>
+      <span data-bind="visible:
+        (weeksOverlay.parent() !== null && weeksOverlay.parent() !== undefined)">
+        NB: Weeks not belonging to the activity's weeks will be indicated in grey,
+        unless selected (in which case the text will be red).
+      </span>
+      <span data-bind="visible:
+        (weeksOverlay.parent() === null || weeksOverlay.parent() === undefined) &&
+        (weeksOverlay.course() !== null && weeksOverlay.course().faculty() !== 'EDUFAC')">
+        NB: Weeks not belonging to the course's term will be indicated in grey,
+        unless selected (in which case the text will be red).
+      </span>
+    </div>
+    <br/>
+    <div>
+      Or select from a preset week pattern here:
+      <select data-bind="options: weeksOverlay.availabilityOptions,
+        value: weeksOverlay.selectedAvailabilityOption"
+        id="weeksOverlayAvailabilitySelector">
+      </select>
+      <a href="#" class="button" data-bind="click: weeksOverlay.changeAvailability">
+        Apply preset
+      </a>
+    </div>
+    <br/>
+    <div>
+      2017 semester dates can be found <a href="https://www.staff.auckland.ac.nz/en/teaching-and-students/academic-programmes/academic-dates/2017-teaching-days-chart.html" target="_blank">here</a>.
+      <br/>
+      2017 quarter dates can be found <a href="https://www.staff.auckland.ac.nz/en/teaching-and-students/academic-programmes/academic-dates/2017-gsm-teaching-days-chart.html" target="_blank">here</a>.
+    </div>
+    <br/>
+    <div>
+      <a href="#" class="button" data-bind="click: weeksOverlay.change">
+        Apply changes
+      </a>
+      <a href="#" class="button" data-bind="click: weeksOverlay.cancel">
+        Discard changes
+      </a>
+    </div>
+  </div>
+
+  <div class="overlay" id="staff-overlay" data-bind="visible: staffOverlay.visible()">
+    <div>
+      <b>Editing staff for: <span data-bind="text: staffOverlay.localName()"></span></b>
+    </div>
+    <table>
+        <tr>
+            <th>Staff for <span data-bind="text: function(){
+                if (staffOverlay.course() === null) {
+                  return '';
+                }
+                return staffOverlay.course().department();
+              }()"></span>
+            </th>
+            <th></th>
+            <th>Current staff</th>
+        </tr>
+        <tr>
+            <td>
+                Filter: <input type="text" size="15" id="availableStaffFilter"
+                    data-bind="event: {keyup: function() {
+                        // Manually trigger the update on keyup
+                        staffOverlay.filterAvailableStaff(jQuery('#availableStaffFilter').val());
+                        return true;
+                } }"/>
+                <a href="#" class="button"
+                    data-bind="click: function(){
+                        staffOverlay.filterAvailableStaff('');
+                        jQuery('#availableStaffFilter').val('');
+                    }">
+                    Clear</a>
+                <br/>
+                <select class="staff-select" size="10" multiple="true"
+                    data-bind="options: $root.staffOverlay.availableStaff,
+                    selectedOptions: $root.staffOverlay.highlightedAvailableStaff">
+                </select>
+            </td>
+            <td>
+                <a href="#" class="bigbutton" data-bind="click: staffOverlay.addStaff">&gt;</a>
+                <br/>
+                <a href="#" class="bigbutton" data-bind="click: staffOverlay.removeStaff">&lt;</a>
+            </td>
+            <td>
+                &nbsp;<br/>
+                <select class="staff-select" size="10" multiple="true"
+                     data-bind="options: staffOverlay.temporaryStaff,
+                     selectedOptions: staffOverlay.highlightedTemporaryStaff">
+                </select>
+            </td>
+        </tr>
+    </table>
+    <br/>
+    <div>
+      Add staff by selecting names on the left and clicking the <a href="#" class="button" data-bind="click: function(){return false;}">&gt;</a> button.
+      <br/>
+      Remove staff by selecting names on the right and clicking the <a href="#" class="button" data-bind="click: function(){return false;}">&lt;</a> button.
+    </div>
+    <br/>
+    <div>
+      If staff names need to be added or removed, please contact timetable@auckland.ac.nz (include name, department and ID number).
+    </div>
+    <br/
+    <div>
+      <a href="#" class="button" data-bind="click: function(){$root.staffOverlay.change();}">
+        Apply changes
+      </a>
+      <a href="#" class="button" data-bind="click: function(){$root.staffOverlay.cancel();}">
+        Discard changes
+      </a>
+    </div>
+  </div>
+
+  <div class="overlay" id="staffvariant-overlay" data-bind="visible: staffVariantOverlay.visible()">
+    <div>
+      <b>Editing staff for: <span data-bind="text: staffVariantOverlay.localName()"></span></b>
+    </div>
+    <div>
+      <select data-bind="options: function(){
+          if (staffVariantOverlay.course() === null) {
+            return [''];
+          }
+          return ALL_STAFF[staffVariantOverlay.course().department()];
+        }(), value: staffVariantOverlay.value">
+      </select>
+    </div>
+    <br/>
+    <div>
+      Select the appropriate staff member for this variant. Variants can only have a single staff member.
+      For another staff member teaching the same weeks, create another variant.
+    </div>
+    <br/>
+    <div>
+      If staff names need to be added or removed, please contact timetable@auckland.ac.nz (include name, department and ID number).
+    </div>
+    <br/>
+    <div>
+      <a href="#" class="button" data-bind="click: function(){staffVariantOverlay.change();}">
+        Apply changes
+      </a>
+      <a href="#" class="button" data-bind="click: function(){staffVariantOverlay.cancel();}">
+        Discard changes
+      </a>
+      <a href="#" class="button" data-bind="click: function(){
+        staffVariantOverlay.noStaff = true;
+        $root.staffVariantOverlay.change();
+      }">
+        No staff required
+      </a>
+    </div>
+  </div>
+
+  <div class="overlay" id="location-overlay" data-bind="visible: locationOverlay.visible()">
+    <div>
+      Is a room required?
+      <select data-bind="options: [true, false],
+      value: locationOverlay.locationRequired,
+      optionsText: function(t) {
+        if (t === true) {
+          return 'Yes';
+        } else {
+          return 'No';
+        }
+      }
+      ">
+      </select>&nbsp;      
+      <span data-bind="visible: locationOverlay.locationRequirementNumber() > 0">
+        Number of required locations: <input class="size-selector" type="number" min="0" max="20" data-bind="
+          value: locationOverlay.locationRequirementNumber,
+          event: {keydown: $root.isInteger}"
+        />
+      </span>
+    </div>
+    <div data-bind="visible: locationOverlay.locationRequirementNumber() > 0">
+      What type of room is required?
+      <select data-bind="options: LOCATION_TYPES, value: locationOverlay.locationType">
+      </select>
+    </div>
+    <br/>
+    <table data-bind="visible: locationOverlay.locationRequirementNumber() > 0">
+      <tr>
+        <th>Suitabilities for <span data-bind="text: function(){
+            if (locationOverlay.course() === null) {
+              return '';
+            }
+            return locationOverlay.course().faculty();
+          }()"></span>
+        </th>
+        <th></th>
+        <th>Current suitabilities</th>
+      </tr>
+      <tr>
+        <td>
+            Filter:
+            <input type="text" size="15" id="availableSuitabilitiesFilter"
+              data-bind="event: { 
+                keyup: function() {
+                  // Manually trigger the update on keyup
+                  locationOverlay.filterAvailableSuitabilities(
+                    jQuery('#availableSuitabilitiesFilter').val());
+                  return true;
+                }
+              }"/>
+            <a href="#" class="button"
+              data-bind="click: function(){
+                locationOverlay.filterAvailableSuitabilities('');
+                jQuery('#availableSuitabilitiesFilter').val('');
+              }">
+              Clear</a>
+            <br/>
+          <select class="staff-select" size="10" multiple="true"
+            data-bind="options: locationOverlay.availableSuitabilities,
+            selectedOptions: locationOverlay.highlightedAvailableSuitabilities">
+          </select>
+        </td>
+        <td>
+          <a href="#" class="bigbutton" data-bind="click: locationOverlay.addSuitabilities">&gt;</a>
+          <br/>
+          <a href="#" class="bigbutton" data-bind="click: locationOverlay.removeSuitabilities">&lt;</a>
+        </td>
+        <td>
+          &nbsp;<br/>
+          <select class="staff-select" size="10" multiple="true"
+             data-bind="options: locationOverlay.temporarySuitabilities,
+             selectedOptions: locationOverlay.highlightedTemporarySuitabilities">
+          </select>
+        </td>
+      </tr>
+    </table>
+    Additional requirement details:<br/>
+    <textarea data-bind="value:locationOverlay.locationFreeText" rows="2" cols="50" placeholder="Please enter any additional location requirements, including reasons">
+    </textarea>
+
+    <br/>
+    <div>
+      <a href="#" class="button" data-bind="click: function(){locationOverlay.change();}">
+        Apply changes
+      </a>
+      <a href="#" class="button" data-bind="click: function(){locationOverlay.cancel();}">
+        Discard changes
+      </a>
+    </div>
+  </div>
+
+  <div class="overlay" id="sequencing-overlay" data-bind="visible: sequencingOverlay.visible()">
+    <div>
+      <b>Editing sequencing info for: <span data-bind="text: sequencingOverlay.localName()"></span></b>
+    </div>
+    <br/>
+    <div>
+      <select data-bind="
+        options: SEQUENCING_SELECTIONS,
+        selectedOptions: sequencingOverlay.sequencingSelection,
+        attr: {size: SEQUENCING_SELECTIONS.length}
+      " multiple="true"></select>
+    </div>
+    <a href="#" class="button" data-bind="click: function(){
+      sequencingOverlay.sequencingSelection([]);
+    }">Clear</a>
+    <br/>
+    <br/>
+
+    <div>
+      Additional sequencing details:
+      <br/>
+      <textarea data-bind="value: sequencingOverlay.sequencingFreeText"
+        rows="4" cols="50" placeholder="Add any additional sequencing information here"></textarea>
+    </div>
+    <br/>
+
+    <div>
+      <a href="#" class="button" data-bind="click: function(){sequencingOverlay.change();}">
+        Apply changes
+      </a>
+      <a href="#" class="button" data-bind="click: function(){sequencingOverlay.cancel();}">
+        Discard changes
+      </a>
+    </div>
+  </div>
+
+  <!-- Displays visibly for slow loaders -->
+  <div class="overlay" data-bind="visible: false">
+    <h3>Initialising data collection form</h3>
+  </div>
+
+  <div data-bind="if: unsentChanges">
+    <div class="sublevel new change-alert">
+      You have saved changes that have not yet been sent to the server!
+      <br/><br/>
+      <a href="#" class="button bigbutton" data-bind="click: sendChangesToServer">
+        Send saved changes to server
+      </a>
+    </div>
+  </div>
+
+  <p>
+    <ul class="pagination">
+      <li class="previous" data-bind="visible: currentPage() > 1">
+        <a href="#" data-bind="click: $root.changePage.bind($data, currentPage()-1)">&lt; Previous</a>
+      </li>
+      <li class="previous-off" data-bind="visible: currentPage() == 1">
+        <label>&lt; Previous</label>
+      </li>
+
+      <div data-bind="foreach: pageList()">
+        <li data-bind="css: {active: $root.currentPage() == $data}">
+          <a href="#" data-bind="text: $data, click: $root.changePage.bind($data, $data), visible: $root.currentPage() != $data && $data != '...'"}></a>
+          <label data-bind="text: $data, visible: $root.currentPage() == $data && $data != '...'"></label>
+          <label class="placeholder" data-bind="visible: $data == '...'">...</label>
+        </li>
+        
+      </div>
+
+      <li class="next" data-bind="visible: currentPage() < pageCount()">
+        <a href="#" data-bind="click: $root.changePage.bind($data, currentPage()+1)">Next &gt;</a>
+      </li>
+      <li class="next-off" data-bind="visible: currentPage() == pageCount()">
+        <label>Next &gt;</label>
+      </li>
+    </ul>
+    <br/>
+  </p>
+
+  <hr/>
+
+  <p>
+    For feedback or if you have any questions or require support, please contact raise a ticket on GitHub, because that would be funny.
+  </p>
+  
+  <script type="text/javascript">
+    if (window.attachEvent && !window.addEventListener) {
+  	  // user is on a crappy browser we don't support
+  	  alert("CDDC does not support older versions of Internet Explorer. Please try Firefox, Chrome or Safari.");
+  	  document.execCommand('Stop');
+    }
+  </script>
+
+  <!-- Import jQuery from MS CDN -->
+  <script src="resources/jquery-1.9.1.min.js"></script>
+  <!-- Import json2.js for old versions of IE -->
+  <script src="resources/json2.js"></script>
+  <!-- Import KnockOut.js from MS CDN -->
+  <script src="resources/knockout-2.2.1.js" type="text/javascript"></script>
+  <!-- Import KnockOut.Mapping.js -->
+  <script src="resources/ko.mapping.js" type="text/javascript"></script>
+  <!-- Import purl.js -->
+  <script src="resources/purl.js" type="text/javascript"></script>
+  
+  <!-- The Model View ViewModel js file
+     * Handles the UI
+     * Data to/from server
+     * Data model behind the UI
+  -->
+  <script src="resources/reference_data.js" type="text/javascript"></script>
+  <script src="resources/dummy_data.js" type="text/javascript"></script>
+  <script src="resources/mvvm.js" type="text/javascript"></script>
+</body>
+</html>

@@ -1,0 +1,289 @@
+
+html {
+    font-family: arial, 'sans-serif';
+    vertical-algin: top;
+}
+.changed {
+    border: solid 1px red;
+}
+
+.pagination ul{border:0; margin:0; padding:0;}
+
+.pagination li{
+    border:0; margin:0; padding:0;
+    /*font-size:11px;*/
+    list-style:none;
+    margin-right:2px;
+}
+.pagination a{
+    border:solid 1px #9aafe5
+    margin-right:2px;
+}
+.pagination .placeholder{
+    border:solid 1px #9aafe5
+    margin-right:2px;
+    display:block;
+    float:left;
+    padding:3px 6px;
+    text-decoration:none;
+}
+.pagination .previous-off,
+.pagination .next-off {
+    border:solid 1px #DEDEDE
+    color:#888888
+    display:block;
+    float:left;
+    font-weight:bold;
+    margin-right:2px;
+    padding:3px 4px;
+}
+.pagination .next a,
+.pagination .previous a {    
+}
+.pagination .active{
+    background:#2e6ab1;
+    color:#FFFFFF;
+    font-weight:bold;
+    display:block;
+    float:left;
+    padding:4px 6px;
+}
+.pagination a:link,
+    .pagination a:visited {
+    color:#0e509e
+    display:block;
+    float:left;
+    padding:3px 6px;
+    text-decoration:none;
+}
+.pagination a:hover{
+    border:solid 1px #0e509e;
+}
+
+table.activity-layout, table.activity-layout * td {
+    border: 1px solid #c3c3c3;
+    border-collapse: collapse;
+}
+
+.noborder {
+    border: 0px;
+}
+
+table, th, td {
+    border: 1px solid #38745a;
+    border-collapse: collapse;
+}
+
+td, th {
+    padding: 5px;
+    vertical-align: top;
+}
+
+td.week, td.selectedweek {
+    width: 20px;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    cursor: pointer;
+}
+
+td.parentunavailable.week {
+    background-color: gray;
+}
+
+td.parentunavailable.selectedweek {
+    color: red;
+}
+
+td.selectedweek {
+    background-color: blue; /*#404040;*/
+    color: white; /* duplicate required for text */
+}
+
+div.weeks-pane * table, div.weeks-pane * tr {
+    margin: 10px;
+}
+
+.sublevel {
+    margin-left: 20px;
+    margin-right: 20px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.evenLevel-evenRow {
+    background: #c3ebe8;
+}
+
+.evenLevel-oddRow {
+    background: #e7f7f6;
+}
+
+.oddLevel-evenRow {
+    background: #c4e1ff;
+}
+
+.oddLevel-oddRow {
+    background: #9BCDFF;/*#e0eefe;*/
+}
+
+.module-evenRow {
+    background: #c3ebe8;
+}
+
+.module-oddRow {
+    background: #e7f7f6;
+}
+
+.component-evenRow {
+    background: #c4e1ff;
+}
+
+.component-oddRow {
+    background: #e0eefe;
+}
+
+.template-evenRow {
+    background: #eecad0;
+}
+
+.template-oddRow {
+    background: #f9ecee;
+}
+
+.activity-evenRow {
+    background: #dedcf4;
+}
+
+.activity-oddRow {
+    background: #e9e8f9;
+}
+
+.new {
+    background: #C57AF9;
+}
+
+.header {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.course {
+    font-size: 12px;
+}
+
+a.course.header{
+    text-decoration: none;
+    color: #18543a;
+}
+.active-filter{
+    background: #bbffbb;
+}
+
+a.button, a.bigbutton {         
+    font-size: 12px;
+    background: #fff no-repeat 4px 5px;
+    display: inline-block;
+    padding: 2px 2px 2px;       
+    text-align: center;
+    color: #333;
+    border:1px solid #ccc;
+    text-decoration: none;
+    line-height: 1.2em;
+    border-radius: 4px;
+    -moz-border-radius: 4px;
+    -webkit-border-radius: 4px;
+    -moz-box-shadow: 0 1px 3px #999;
+    -webkit-box-shadow: 0 1px 3px #999;
+    position: relative;
+    cursor: pointer;
+    outline:none;
+    background: #f3f3f3;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+a.button:hover, a.button:focus,
+a.bigbutton:hover, a.bigbutton:focus {
+    border:1px solid #333;
+}
+
+a.edit-row {
+    background-color: green;    
+    color: white;
+}
+
+a.collapse-row {
+    background-color: blue;
+    color: white;
+}
+
+a.row-button {
+    border:1px solid black;
+    font-weight: bold;
+}
+
+a.change {
+    color: #FF0000;
+    background: #FCFCFC;
+    font-weight: bold;
+}
+
+a.change:hover {
+    color: #00DF1C;
+}
+
+a.bigbutton {
+    font-size: 16px;
+    font-weight: bold;
+    padding: 10px;
+}
+
+select.staff-select {
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    width: 20em;
+}
+
+div.activity-pane {
+    margin: 10px;
+}
+
+div.activity-pane-row {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+div.overlay {
+    position: fixed;
+    display: block;
+    background-color:#eeeeee;
+    width:1000px;
+    height:400px;
+    z-index: 1001;
+    top: 100px;
+    left: 100px;
+    padding: 20px;
+}
+
+div.change-alert {
+    width: 600px;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+.warning {
+    color: red;
+}
